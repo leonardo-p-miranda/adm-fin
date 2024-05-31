@@ -4,6 +4,8 @@ import numpy as np
 from scipy.optimize import minimize
 from scipy.stats import norm
 import matplotlib.pyplot as plt
+import openpyxl
+
 
 # Lista de ativos
 tickers = ['PETR4.SA', 'VALE3.SA', 'ITUB4.SA', 'ABEV3.SA', 'MGLU3.SA',
@@ -104,6 +106,13 @@ for name, port_ret in portfolios.items():
     portfolio_stats.at[name, 'var'] = port_ret.mean() - z * port_ret.std()
 
 print(portfolio_stats)
+
+# Salvar as estatísticas e os portfólios em arquivos XLS
+with pd.ExcelWriter('financial_analysis_results.xlsx') as writer:
+    data.to_excel(writer, sheet_name='Preços Históricos')
+    returns.to_excel(writer, sheet_name='Retornos')
+    stats.to_excel(writer, sheet_name='Estatísticas')
+    portfolio_stats.to_excel(writer, sheet_name='Portfólios')
 
 # Fronteira Eficiente
 
