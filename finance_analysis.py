@@ -6,10 +6,10 @@ from scipy.stats import norm
 import matplotlib.pyplot as plt
 import openpyxl
 
-
 # Lista de ativos
-tickers = ['PETR4.SA', 'VALE3.SA', 'ITUB4.SA', 'BBDC4.SA', 'ABEV3.SA', 
-           'MGLU3.SA', 'BBAS3.SA', 'B3SA3.SA', 'WEGE3.SA', 'GGBR4.SA']
+tickers = ['PETR4.SA', 'VALE3.SA', 'BBSE3.SA', 'ITSA4.SA', 'SANB11.SA', 
+           'MGLU3.SA', 'BBAS3.SA', 'EGIE3.SA', 'WEGE3.SA', 'GGBR4.SA']
+
 # Período de 5 anos
 start_date = '2019-01-01'
 end_date = '2023-12-31'
@@ -23,19 +23,15 @@ returns = np.log(data / data.shift(1))
 # Dropar NaN resultantes do cálculo de retornos
 returns = returns.dropna()
 
-# Salvar os dados de preços históricos em um arquivo CSV
-data.to_csv('historical_prices.csv')
-
-# Salvar os retornos calculados em um arquivo CSV
-returns.to_csv('returns.csv')
-
 # Estatísticas descritivas dos retornos
 stats = returns.describe().transpose()
 stats['variance'] = returns.var()
 stats['median'] = returns.median()
 
+
+number_of_days = 252
 # Definir a taxa livre de risco (ex: Selic)
-rf = 0.13 / 252  # Assumindo uma taxa Selic de 13% anual dividida por 252 dias úteis
+rf = 0.13 / number_of_days  # Assumindo uma taxa Selic de 13% anual dividida por 252 dias úteis
 
 # Calcular o Índice de Sharpe
 stats['sharpe'] = (stats['mean'] - rf) / stats['std']
@@ -95,19 +91,22 @@ portfolios = {
 portfolio_stats = pd.DataFrame(index=portfolios.keys(), columns=['mean', 'median', 'std', 'variance', 'sharpe', 'beta', 'treynor', 'var'])
 
 for name, port_ret in portfolios.items():
-    portfolio_stats.at[name, 'mean'] = port_ret.mean() * 252
+    port_mean = port_ret.mean() * number_of_days
+    port_std = port_ret.std() * np.sqrt(number_of_days)
+    port_var = port_ret.var() * number_of_days
+    portfolio_stats.at[name, 'mean'] = port_mean
     portfolio_stats.at[name, 'median'] = port_ret.median()
-    portfolio_stats.at[name, 'std'] = port_ret.std() * np.sqrt(252)
-    portfolio_stats.at[name, 'variance'] = port_ret.var() * 252
-    portfolio_stats.at[name, 'sharpe'] = (port_ret.mean() - rf) / port_ret.std() * np.sqrt(252)
+    portfolio_stats.at[name, 'std'] = port_std
+    portfolio_stats.at[name, 'variance'] = port_var
+    portfolio_stats.at[name, 'sharpe'] = (port_mean - rf * number_of_days) / port_std
     portfolio_stats.at[name, 'beta'] = np.cov(port_ret, aligned_ibov_returns)[0, 1] / aligned_ibov_returns.var()
-    portfolio_stats.at[name, 'treynor'] = (port_ret.mean() - rf) / portfolio_stats.at[name, 'beta']
-    portfolio_stats.at[name, 'var'] = port_ret.mean() - z * port_ret.std()
+    portfolio_stats.at[name, 'treynor'] = (port_mean - rf * number_of_days) / portfolio_stats.at[name, 'beta']
+    portfolio_stats.at[name, 'var'] = port_mean - z * port_std
 
 print(portfolio_stats)
 
 # Salvar as estatísticas e os portfólios em arquivos XLS
-with pd.ExcelWriter('financial_analysis_results.xlsx') as writer:
+with pd.ExcelWriter('financial_analysis_results.xlsx', engine='openpyxl') as writer:
     data.to_excel(writer, sheet_name='Preços Históricos')
     returns.to_excel(writer, sheet_name='Retornos')
     stats.to_excel(writer, sheet_name='Estatísticas')
@@ -116,8 +115,8 @@ with pd.ExcelWriter('financial_analysis_results.xlsx') as writer:
 # Fronteira Eficiente
 
 def portfolio_performance(weights, returns):
-    portfolio_return = np.sum(weights * returns.mean()) * 252
-    portfolio_stddev = np.sqrt(np.dot(weights.T, np.dot(returns.cov() * 252, weights)))
+    portfolio_return = np.sum(weights * returns.mean()) * number_of_days
+    portfolio_stddev = np.sqrt(np.dot(weights.T, np.dot(returns.cov() * number_of_days, weights)))
     return portfolio_return, portfolio_stddev
 
 def negative_sharpe_ratio(weights, returns, risk_free_rate):
@@ -143,8 +142,8 @@ tangent_weights = opt_results.x
 
 # Plotar a Fronteira Eficiente
 def plot_efficient_frontier(returns):
-    mean_returns = returns.mean() * 252
-    cov_matrix = returns.cov() * 252
+    mean_returns = returns.mean() * number_of_days
+    cov_matrix = returns.cov() * number_of_days
     port_returns = []
     port_stddevs = []
     
