@@ -8,9 +8,8 @@ import openpyxl
 
 
 # Lista de ativos
-tickers = ['PETR4.SA', 'VALE3.SA', 'ITUB4.SA', 'ABEV3.SA', 'MGLU3.SA',
-           'BSBR', 'ERJ', 'BTC-USD', 'ETH-USD', 'XRP-USD']
-
+tickers = ['PETR4.SA', 'VALE3.SA', 'ITUB4.SA', 'BBDC4.SA', 'ABEV3.SA', 
+           'MGLU3.SA', 'BBAS3.SA', 'B3SA3.SA', 'WEGE3.SA', 'GGBR4.SA']
 # Período de 5 anos
 start_date = '2019-01-01'
 end_date = '2023-12-31'
